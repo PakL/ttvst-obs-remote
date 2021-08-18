@@ -1,0 +1,261 @@
+{
+	"Scene change": {
+		"de": "Szenenwechsel"
+	},
+	"Indicates a scene change": {
+		"de": "Zeigt einen Szenenwechsel an"
+	},
+	"Stream started": {
+		"de": "Stream gestartet"
+	},
+	"Streaming started successfully": {
+		"de": "Stream wurde erfolgreich gestartet"
+	},
+	"Stream stopped": {
+		"de": "Stream angehalten"
+	},
+	"Streaming stopped successfully": {
+		"de": "Stream wurde erfolgreich angehalten"
+	},
+	"Stream status": {
+		"de": "Stream-Status"
+	},
+	"Emitted every 2 seconds when stream is active": {
+		"de": "Wird alle 2 Sekunden ausgelöst wenn der Stream aktiv ist"
+	},
+	"Current streaming state": {
+		"de": "Aktueller Stream-Status"
+	},
+	"Current recording state": {
+		"de": "Aktueller Aufnahme-Status"
+	},
+	"Replay Buffer status": {
+		"de": "Wiedergabebuffer-Status"
+	},
+	"Amount of data per second (in kilobits) transmitted by the stream encoder": {
+		"de": "Menge an Daten pro Sekunde (in Kilobits), die durch den Stream-Encoder übermittelt wurden"
+	},
+	"Percentage of dropped frames": {
+		"de": "Anteil der gedroppten Frames in Prozent"
+	},
+	"Total time (in seconds) since the stream started": {
+		"de": "Zeit (in Sekunden) seit der Stream startete"
+	},
+	"Total number of frames transmitted since the stream started": {
+		"de": "Gesamtzahl der Frames die seit Streamstart übertragen wurden"
+	},
+	"Number of frames dropped by the encoder since the stream started": {
+		"de": "Zahl der Frames die vom Encoder seit dem Streamstart gedroppt wurden"
+	},
+	"Current framerate": {
+		"de": "Aktuelle Bildrate"
+	},
+	"Number of frames rendered": {
+		"de": "Anzahl der Frames die gerendert wurden"
+	},
+	"Number of frames missed due to rendering lag": {
+		"de": "Anzahl der Frames, die durch Render-Lag verpasst wurden"
+	},
+	"Number of frames outputted": {
+		"de": "Anzahl Frames, die ausgegeben wurden"
+	},
+	"Number of frames skipped due to encoding lag": {
+		"de": "Anzahl der Frames, die durch Encoder-Lag übersprungen wurden"
+	},
+	"Average frame time (in milliseconds)": {
+		"de": "Durchschnittliche Framezeit (in Millisekunden)"
+	},
+	"Current CPU usage (percentage)": {
+		"de": "Aktuelle CPU-Nutzung (Prozent)"
+	},
+	"Current RAM usage (in megabytes)": {
+		"de": "Aktuelle RAM-Nutzung (in Megabytes)"
+	},
+	"Free recording disk space (in megabytes)": {
+		"de": "Freier Speicherplatz für Aufnahmen (in Megabytes)"
+	},
+	"Set current scene": {
+		"de": "Aktuelle Szene festlegen"
+	},
+	"Switch to the specified scene": {
+		"de": "Zur angegebenen Szene wechseln"
+	},
+	"Name of the scene to switch to": {
+		"de": "Name der Szene zu der gewechselt werden soll"
+	},
+	"Was the action executed successfully": {
+		"de": "Wurde die Aktion erfolgreich ausgeführt"
+	},
+	"Get current scene": {
+		"de": "Aktuelle Szene abfragen"
+	},
+	"Get the current scene's name": {
+		"de": "Fragt den Namen der aktuellen Szene ab"
+	},
+	"Name of the currently active scene": {
+		"de": "Name der aktuell aktiven Szene"
+	},
+	"Get source properties": {
+		"de": "Quellen-Eigenschaften abrufen"
+	},
+	"Gets the scene specific properties of the specified source item. Coordinates are relative to the item's parent (the scene or group it belongs to).": {
+		"de": "Fragt die akuellen Szenen spezifischen Eigenschaften der angegbenen Quelle ab. Koordinaten sind relativ zur nächsthöheren Gruppe oder Szene."
+	},
+	"Name of the scene the source item belongs to. Defaults to the current scene.": {
+		"de": "Name der Szene in der sich die Quelle befindet. Standardmäßig die aktive Szene."
+	},
+	"Source name": {
+		"de": "Quellen-Name"
+	},
+	"Source properties. Get a list here: https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md#getsceneitemproperties (dots are replaced with underscores)": {
+		"de": "Quellen-Eigenschaften. Siehe Liste hier: https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md#getsceneitemproperties (Punkte werden durch Unterstriche ersetzt)"
+	},
+	"Set source properties": {
+		"de": "Quellen-Eigenschaften festlegen"
+	},
+	"Sets the scene specific properties of a source. Unspecified properties will remain unchanged. Coordinates are relative to the item's parent (the scene or group it belongs to).": {
+		"de": "Legt die Szenen spezifischen Eigenschaften einer Quelle fest. Nicht angegebene Eigenschaften bleiben unverändert. Koordinaten sind relativ zur nächsthöheren Gruppe oder Szene."
+	},
+	"Source properties. Get a list here: https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md#setsceneitemproperties (dots are replaced with underscores)": {
+		"de": "Quellen-Eigenschaften. Siehe Liste hier: https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md#setsceneitemproperties (Punkte durch Unterstriche ersetzen)"
+	},
+	"Animate changes for duration in milliseconds (1/1000s). Leave blank or 0 for no animation.": {
+		"de": "Änderungen für die Dauer in Millisekunden animieren. Leer lassen oder 0 für keine Animation."
+	},
+	"Ease animation start": {
+		"de": "Weicher Animationsstart"
+	},
+	"Ease animation end": {
+		"de": "Weiches Animationsende"
+	},
+	"Set source position": {
+		"de": "Quellen-Position festlegen"
+	},
+	"Sets the scene specific position of a source. Coordinates are relative to the item's parent (the scene or group it belongs to).": {
+		"de": "Legt die Szenen spezifische Position einer Quelle fest. Koordinaten sind relativ zur nächsthöheren Gruppe oder Szene."
+	},
+	"The new x position of the source": {
+		"de": "Die neue X Position der Quelle"
+	},
+	"The new y position of the source": {
+		"de": "Die neue Y Position der Quelle"
+	},
+	"The point on the source that the item is manipulated from. The sum of 1=Left or 2=Right, and 4=Top or 8=Bottom, or omit to center on that axis.": {
+		"de": "Der Punkt von dem aus die Quelle manipuliert wird. Eine Summe aus 1=Links oder 2=Rechts, 4=Oben oder 8=Unten, oder 0 um die Achse zu zentrieren."
+	},
+	"Set source rotation": {
+		"de": "Quellen-Rotation festlegen"
+	},
+	"Sets the scene specific rotation of a source": {
+		"de": "Legt die Szenen spezifische Rotation einer Quelle fest"
+	},
+	"The new clockwise rotation of the item in degrees": {
+		"de": "Die neue Rotation im Uhrzeigersinn der Quelle in Grad"
+	},
+	"Set source scale": {
+		"de": "Quellen-Skalierung festlegen"
+	},
+	"Sets the scene specific scale of a source": {
+		"de": "Legt die Szenen spezifische Skalierung einer Quelle fest"
+	},
+	"The new x scale of the source": {
+		"de": "Die neue X Skalierung der Quelle"
+	},
+	"The new y scale of the source": {
+		"de": "Die neue Y Skalierung der Quelle"
+	},
+	"Set source crop": {
+		"de": "Quellen-Zuschneidung festlegen"
+	},
+	"Sets the scene specific crop of a source": {
+		"de": "Legt die Szenen spezifische Zuschneidung einer Quelle fest"
+	},
+	"The number of pixels cropped off the top of the source before scaling": {
+		"de": "Anzahl Pixel die vor der Skalierung an der oberen Kante von der Quelle entfernt werden"
+	},
+	"The number of pixels cropped off the right of the source before scaling": {
+		"de": "Anzahl Pixel die vor der Skalierung an der rechten Kante von der Quelle entfernt werden"
+	},
+	"The number of pixels cropped off the bottom of the source before scaling": {
+		"de": "Anzahl Pixel die vor der Skalierung an der unteren Kante von der Quelle entfernt werden"
+	},
+	"The number of pixels cropped off the left of the source before scaling": {
+		"de": "Anzahl Pixel die vor der Skalierung an der linken Kante von der Quelle entfernt werden"
+	},
+	"Set source in-/visible": {
+		"de": "Quellen-Sichtbarkeit festlegen"
+	},
+	"Sets the scene specific visibility of a source": {
+		"de": "Legt die Szenen spezifische Sichtbarkeit einer Quelle fest"
+	},
+	"The new visibility of the source. 'true' shows source, 'false' hides source": {
+		"de": "Die neue Sichtbarkeit der Quelle. 'true' zeigt die Quelle, 'false' versteckt die Quelle"
+	},
+	"Set source un-/locked": {
+		"de": "Quelle ent-/sperren"
+	},
+	"Sets the scene specific locked status of a source": {
+		"de": "Legt die Szenen spezifische Sperre einer Quelle fest"
+	},
+	"The new locked status of the source. 'true' keeps it in its current position, 'false' allows movement.": {
+		"de": "Der neuen Sperrstatus der Quelle. 'true' sperrt die Quelle an ihrere position, 'false' erlaubt Bewegung"
+	},
+	"Set source bounds": {
+		"de": "Quellen-Begrenzung festlegen"
+	},
+	"Sets the scene specific bounds of a source": {
+		"de": "Legt die Szenen spezifische Begrenzung einer Quelle fest"
+	},
+	"The new bounds type of the source. Can be OBS_BOUNDS_STRETCH, OBS_BOUNDS_SCALE_INNER, OBS_BOUNDS_SCALE_OUTER, OBS_BOUNDS_SCALE_TO_WIDTH, OBS_BOUNDS_SCALE_TO_HEIGHT, OBS_BOUNDS_MAX_ONLY or OBS_BOUNDS_NONE": {
+		"de": "Der neue Begrenzungstyp der Quelle. Kann eins von OBS_BOUNDS_STRETCH, OBS_BOUNDS_SCALE_INNER, OBS_BOUNDS_SCALE_OUTER, OBS_BOUNDS_SCALE_TO_WIDTH, OBS_BOUNDS_SCALE_TO_HEIGHT, OBS_BOUNDS_MAX_ONLY oder OBS_BOUNDS_NON sein"
+	},
+	"The new alignment of the bounding box. (0-2, 4-6, 8-10)": {
+		"de": "Die neue Ausrichtung des Begrenzungsrahmen. (0-2, 4-6, 8-10)"
+	},
+	"The new width of the bounding box": {
+		"de": "Die neue Breite des Begrenzungsrahmen"
+	},
+	"The new height of the bounding box": {
+		"de": "Die neue Höhe des Begrenzungsrahmen"
+	},
+
+	"Get source filter visibility": {
+		"de": "Quellen-Filter-Sichtbarkeit abrufen"
+	},
+	"Gets the visibility/enabled state of a filter": {
+		"de": "Ruft den Sichtbarkeits-/Aktiviert-Status eines Filters ab"
+	},
+	"Source filter name": {
+		"de": "Quellen-Filter-Name"
+	},
+	"Is the filter enabled": {
+		"de": "Ist der Filter aktiviert"
+	},
+	"Get source filter settings": {
+		"de": "Quellen-Filter-Einstellungen abrufen"
+	},
+	"Gets the settings of a filter": {
+		"de": "Ruft die Einstellungen eines Filters ab"
+	},
+	"Filter settings. There is no list, you are on your own.": {
+		"de": "Filter-Einstellungen. Es gibt keine Liste, du bist auf dich allein gestellt"
+	},
+	"Set source filter visibility": {
+		"de": "Quellen-Filter-Sichtbarkeit festlegen"
+	},
+	"Change the visibility/enabled state of a filter": {
+		"de": "Legt den Sichtbarkeits-/Aktivert-Status eines Filters fest"
+	},
+	"New filter state": {
+		"de": "Neuer Filter-Status"
+	},
+	"Set source filter settings": {
+		"de": "Quellen-Filter-Einstellungen festlegen"
+	},
+	"Change the settings of a filter. Some settings may be animated.": {
+		"de": "Legt die Einstellungen eines Filters fest. Einige Einstellungen können möglicherweise animiert werden."
+	},
+	"New filter settings": {
+		"de": "Neue Filter-Einstellungen"
+	}
+}

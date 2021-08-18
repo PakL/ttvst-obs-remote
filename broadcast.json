@@ -1,0 +1,235 @@
+{
+	"$schema": "https://addons.ttvst.app/broadcast.schema.json",
+	"triggers": [
+		{
+			"label": "Scene change",
+			"addon": "OBS remote",
+			"description": "Indicates a scene change",
+			"channel": "app.ttvst.obs.event.switchscenes",
+			"arguments": [
+				{ "label": "SceneName", "type": "string", "description": "The new scene" }
+			]
+		},{
+			"label": "Stream started",
+			"addon": "OBS remote",
+			"description": "Streaming started successfully",
+			"channel": "app.ttvst.obs.event.streamstarted",
+			"arguments": []
+		},{
+			"label": "Stream stopped",
+			"addon": "OBS remote",
+			"description": "Streaming stopped successfully",
+			"channel": "app.ttvst.obs.event.streamstopped",
+			"arguments": []
+		},{
+			"label": "Stream status",
+			"addon": "OBS remote",
+			"description": "Emitted every 2 seconds when stream is active",
+			"channel": "app.ttvst.obs.event.streamstatus",
+			"arguments": [
+				{ "label": "Streaming", "type": "boolean", "description": "Current streaming state" },
+				{ "label": "Recording", "type": "boolean", "description": "Current recording state" },
+				{ "label": "ReplayBufferActive", "type": "boolean", "description": "Replay Buffer status" },
+				{ "label": "KbitsPerSec", "type": "number", "description": "Amount of data per second (in kilobits) transmitted by the stream encoder" },
+				{ "label": "Strain", "type": "number", "description": "Percentage of dropped frames" },
+				{ "label": "TotalStreamTime", "type": "number", "description": "Total time (in seconds) since the stream started" },
+				{ "label": "NumTotalFrames", "type": "number", "description": "Total number of frames transmitted since the stream started" },
+				{ "label": "NumDroppedFrames", "type": "number", "description": "Number of frames dropped by the encoder since the stream started" },
+				{ "label": "Fps", "type": "number", "description": "Current framerate" },
+				{ "label": "RenderTotalFrames", "type": "number", "description": "Number of frames rendered" },
+				{ "label": "RenderMissedFrames", "type": "number", "description": "Number of frames missed due to rendering lag" },
+				{ "label": "OutputTotalFrames", "type": "number", "description": "Number of frames outputted" },
+				{ "label": "OutputSkippedFrames", "type": "number", "description": "Number of frames skipped due to encoding lag" },
+				{ "label": "AverageFrameTime", "type": "number", "description": "Average frame time (in milliseconds)" },
+				{ "label": "CpuUsage", "type": "number", "description": "Current CPU usage (percentage)" },
+				{ "label": "MemoryUsage", "type": "number", "description": "Current RAM usage (in megabytes)" },
+				{ "label": "FreeDiskSpace", "type": "number", "description": "Free recording disk space (in megabytes)" }
+			]
+		}
+	],
+	"actions": [
+		{
+			"label": "Set current scene",
+			"addon": "OBS remote",
+			"description": "Switch to the specified scene",
+			"channel": "app.ttvst.obs.request.setcurrentscene",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene to switch to" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Get current scene",
+			"addon": "OBS remote",
+			"description": "Get the current scene's name",
+			"channel": "app.ttvst.obs.request.getcurrentscene",
+			"parameters": [],
+			"result": { "label": "SceneName", "type": "string", "description": "Name of the currently active scene" }
+		},{
+			"label": "Get source properties",
+			"addon": "OBS remote",
+			"description": "Gets the scene specific properties of the specified source item. Coordinates are relative to the item's parent (the scene or group it belongs to).",
+			"channel": "app.ttvst.obs.request.getsceneitemproperties",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene the source item belongs to. Defaults to the current scene." },
+				{ "label": "SourceName", "type": "string", "description": "Source name" }
+			],
+			"result": { "label": "SourceProperties", "type": "assoc", "description": "Source properties. Get a list here: https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md#getsceneitemproperties (dots are replaced with underscores)" }
+		},{
+			"label": "Set source properties",
+			"addon": "OBS remote",
+			"description": "Sets the scene specific properties of a source. Unspecified properties will remain unchanged. Coordinates are relative to the item's parent (the scene or group it belongs to).",
+			"channel": "app.ttvst.obs.request.setsourceproperties",
+			"parameters": [
+				{ "label": "SourceProperties", "type": "assoc", "description": "Source properties. Get a list here: https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md#setsceneitemproperties (dots are replaced with underscores)" },
+				{ "label": "AnimationDuration", "type": "number", "description": "Animate changes for duration in milliseconds (1/1000s). Leave blank or 0 for no animation." },
+				{ "label": "AnimationEaseIn", "type": "boolean", "description": "Ease animation start" },
+				{ "label": "AnimationEaseOut", "type": "boolean", "description": "Ease animation end" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Set source position",
+			"addon": "OBS remote",
+			"description": "Sets the scene specific position of a source. Coordinates are relative to the item's parent (the scene or group it belongs to).",
+			"channel": "app.ttvst.obs.request.setsourceposition",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene the source item belongs to. Defaults to the current scene." },
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "PositionX", "type": "number", "description": "The new x position of the source" },
+				{ "label": "PositionY", "type": "number", "description": "The new y position of the source" },
+				{ "label": "PositionAlignment", "type": "number", "description": "The point on the source that the item is manipulated from. The sum of 1=Left or 2=Right, and 4=Top or 8=Bottom, or omit to center on that axis." },
+				{ "label": "AnimationDuration", "type": "number", "description": "Animate changes for duration in milliseconds (1/1000s). Leave blank or 0 for no animation." },
+				{ "label": "AnimationEaseIn", "type": "boolean", "description": "Ease animation start" },
+				{ "label": "AnimationEaseOut", "type": "boolean", "description": "Ease animation end" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Set source rotation",
+			"addon": "OBS remote",
+			"description": "Sets the scene specific rotation of a source",
+			"channel": "app.ttvst.obs.request.setsourcerotation",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene the source item belongs to. Defaults to the current scene." },
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "Rotation", "type": "number", "description": "The new clockwise rotation of the item in degrees" },
+				{ "label": "AnimationDuration", "type": "number", "description": "Animate changes for duration in milliseconds (1/1000s). Leave blank or 0 for no animation." },
+				{ "label": "AnimationEaseIn", "type": "boolean", "description": "Ease animation start" },
+				{ "label": "AnimationEaseOut", "type": "boolean", "description": "Ease animation end" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Set source scale",
+			"addon": "OBS remote",
+			"description": "Sets the scene specific scale of a source",
+			"channel": "app.ttvst.obs.request.setsourcescale",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene the source item belongs to. Defaults to the current scene." },
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "ScaleX", "type": "number", "description": "The new x scale of the source" },
+				{ "label": "ScaleY", "type": "number", "description": "The new y scale of the source" },
+				{ "label": "AnimationDuration", "type": "number", "description": "Animate changes for duration in milliseconds (1/1000s). Leave blank or 0 for no animation." },
+				{ "label": "AnimationEaseIn", "type": "boolean", "description": "Ease animation start" },
+				{ "label": "AnimationEaseOut", "type": "boolean", "description": "Ease animation end" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Set source crop",
+			"addon": "OBS remote",
+			"description": "Sets the scene specific crop of a source",
+			"channel": "app.ttvst.obs.request.setsourcecrop",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene the source item belongs to. Defaults to the current scene." },
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "CropTop", "type": "number", "description": "The number of pixels cropped off the top of the source before scaling" },
+				{ "label": "CropRight", "type": "number", "description": "The number of pixels cropped off the right of the source before scaling" },
+				{ "label": "CropBottom", "type": "number", "description": "The number of pixels cropped off the bottom of the source before scaling" },
+				{ "label": "CropLeft", "type": "number", "description": "The number of pixels cropped off the left of the source before scaling" },
+				{ "label": "AnimationDuration", "type": "number", "description": "Animate changes for duration in milliseconds (1/1000s). Leave blank or 0 for no animation." },
+				{ "label": "AnimationEaseIn", "type": "boolean", "description": "Ease animation start" },
+				{ "label": "AnimationEaseOut", "type": "boolean", "description": "Ease animation end" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Set source in-/visible",
+			"addon": "OBS remote",
+			"description": "Sets the scene specific visibility of a source",
+			"channel": "app.ttvst.obs.request.setsourcevisible",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene the source item belongs to. Defaults to the current scene." },
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "Visible", "type": "boolean", "description": "The new visibility of the source. 'true' shows source, 'false' hides source" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Set source un-/locked",
+			"addon": "OBS remote",
+			"description": "Sets the scene specific locked status of a source",
+			"channel": "app.ttvst.obs.request.setsourcelocked",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene the source item belongs to. Defaults to the current scene." },
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "Locked", "type": "boolean", "description": "The new locked status of the source. 'true' keeps it in its current position, 'false' allows movement." }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Set source bounds",
+			"addon": "OBS remote",
+			"description": "Sets the scene specific bounds of a source",
+			"channel": "app.ttvst.obs.request.setsourcebounds",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene the source item belongs to. Defaults to the current scene." },
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "BoundsType", "type": "string", "description": "The new bounds type of the source. Can be OBS_BOUNDS_STRETCH, OBS_BOUNDS_SCALE_INNER, OBS_BOUNDS_SCALE_OUTER, OBS_BOUNDS_SCALE_TO_WIDTH, OBS_BOUNDS_SCALE_TO_HEIGHT, OBS_BOUNDS_MAX_ONLY or OBS_BOUNDS_NONE" },
+				{ "label": "BoundsAlignment", "type": "number", "description": "The new alignment of the bounding box. (0-2, 4-6, 8-10)" },
+				{ "label": "BoundsX", "type": "number", "description": "The new width of the bounding box" },
+				{ "label": "BoundsY", "type": "number", "description": "The new height of the bounding box" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+
+			"label": "Get source filter visibility",
+			"addon": "OBS remote",
+			"description": "Gets the visibility/enabled state of a filter",
+			"channel": "app.ttvst.obs.request.getsourcefiltervisibility",
+			"parameters": [
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "FilterName", "type": "string", "description": "Source filter name" }
+			],
+			"result": { "label": "FilterEnabled", "type": "boolean", "description": "Is the filter enabled" }
+		},{
+			"label": "Get source filter settings",
+			"addon": "OBS remote",
+			"description": "Gets the settings of a filter",
+			"channel": "app.ttvst.obs.request.getsourcefiltersettings",
+			"parameters": [
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "FilterName", "type": "string", "description": "Source filter name" }
+			],
+			"result": { "label": "FilterSettings", "type": "assoc", "description": "Filter settings. There is no list, you are on your own." }
+		},{
+			"label": "Set source filter visibility",
+			"addon": "OBS remote",
+			"description": "Change the visibility/enabled state of a filter",
+			"channel": "app.ttvst.obs.request.setsourcefiltervisibility",
+			"parameters": [
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "FilterName", "type": "string", "description": "Source filter name" },
+				{ "label": "FilterEnabled", "type": "boolean", "description": "New filter state" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Set source filter settings",
+			"addon": "OBS remote",
+			"description": "Change the settings of a filter. Some settings may be animated.",
+			"channel": "app.ttvst.obs.request.setsourcefiltersettings",
+			"parameters": [
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "FilterName", "type": "string", "description": "Source filter name" },
+				{ "label": "FilterSettings", "type": "assoc", "description": "New filter settings" },
+				{ "label": "AnimationDuration", "type": "number", "description": "Animate changes for duration in milliseconds (1/1000s). Leave blank or 0 for no animation." },
+				{ "label": "AnimationEaseIn", "type": "boolean", "description": "Ease animation start" },
+				{ "label": "AnimationEaseOut", "type": "boolean", "description": "Ease animation end" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		}
+	]
+}
