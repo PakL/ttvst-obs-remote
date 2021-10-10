@@ -276,6 +276,24 @@ class OBSRemoteMain {
 		});
 	}
 
+	private setupSpecialActions() {
+		const self = this;
+		BroadcastMain.instance.on('app.ttvst.obs.request.getcurrentsources', (executeId: string, sceneName: string) => {
+			self.connection.send('GetSceneItemList', { sceneName }).then((values) => {
+				let sources: string[] = [];
+				if(typeof(values.sceneItems) !== 'undefined') {
+					for(let i = 0; i < values.sceneItems.length; i++) {
+						sources.push(values.sceneItems[i].sourceName);
+					}
+				}
+				BroadcastMain.instance.executeRespond(executeId, sources);
+			}).catch((reason) => {
+				logger.error(reason);
+				BroadcastMain.instance.executeRespond(executeId, []);
+			});
+		})
+	}
+
 	private static easeLinear(time: number, startval: number, change: number, duration: number) {
 		return change * time / duration + startval;
 	}
@@ -352,7 +370,7 @@ class OBSRemoteMain {
 				try {
 					await this.connection.send('SetSceneItemProperties', currentValues as any);
 				} catch(er) {
-					logger.error(er);
+					break;
 				}
 				let frameEnd = new Date().getTime();
 
@@ -417,7 +435,7 @@ class OBSRemoteMain {
 				try {
 					await this.connection.send('SetSourceFilterSettings', currentValues as any);
 				} catch(er) {
-					logger.error(er);
+					break;
 				}
 				let frameEnd = new Date().getTime();
 
@@ -443,6 +461,7 @@ class OBSRemoteMain {
 		for(let key of Object.keys(OBSActions) as Array<keyof typeof OBSActions>) {
 			this.setupActions(OBSActions[key].r, key, OBSActions[key].p);
 		}
+		this.setupSpecialActions();
 	}
 
 }

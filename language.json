@@ -257,5 +257,17 @@
 	},
 	"New filter settings": {
 		"de": "Neue Filter-Einstellungen"
+	},
+	"Get source list": {
+		"de": "Quellen-Liste abfragen"
+	},
+	"Get a scene's sources": {
+		"de": "Fragt die Quellen einer Szene ab"
+	},
+	"Name of the scene to get the source items from. Defaults to the current scene.": {
+		"de": "Name der Szene, von der die Quellen abgefragt werden. Standardmäßig die aktive Szene."
+	},
+	"List of source item names": {
+		"de": "Liste der Quellennamen"
 	}
 }

@@ -65,6 +65,15 @@
 			"parameters": [],
 			"result": { "label": "SceneName", "type": "string", "description": "Name of the currently active scene" }
 		},{
+			"label": "Get source list",
+			"addon": "OBS remote",
+			"description": "Get a scene's sources",
+			"channel": "app.ttvst.obs.request.getcurrentsources",
+			"parameters": [
+				{ "label": "SceneName", "type": "string", "description": "Name of the scene to get the source items from. Defaults to the current scene." }
+			],
+			"result": { "label": "SourceList", "type": "list", "description": "List of source item names" }
+		},{
 			"label": "Get source properties",
 			"addon": "OBS remote",
 			"description": "Gets the scene specific properties of the specified source item. Coordinates are relative to the item's parent (the scene or group it belongs to).",
