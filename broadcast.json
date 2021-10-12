@@ -96,6 +96,25 @@
 			],
 			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
 		},{
+			"label": "Get source settings",
+			"addon": "OBS remote",
+			"description": "Gets the settings of the specified source item.",
+			"channel": "app.ttvst.obs.request.getsourcesettings",
+			"parameters": [
+				{ "label": "SourceName", "type": "string", "description": "Source name" }
+			],
+			"result": { "label": "SourceSettings", "type": "assoc", "description": "Source settings" }
+		},{
+			"label": "Set source settings",
+			"addon": "OBS remote",
+			"description": "Sets the settings of a source",
+			"channel": "app.ttvst.obs.request.setsourcesettings",
+			"parameters": [
+				{ "label": "SourceName", "type": "string", "description": "Source name" },
+				{ "label": "SourceSettings", "type": "assoc", "description": "Source settings" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
 			"label": "Set source position",
 			"addon": "OBS remote",
 			"description": "Sets the scene specific position of a source. Coordinates are relative to the item's parent (the scene or group it belongs to).",
@@ -237,6 +256,15 @@
 				{ "label": "AnimationDuration", "type": "number", "description": "Animate changes for duration in milliseconds (1/1000s). Leave blank or 0 for no animation." },
 				{ "label": "AnimationEaseIn", "type": "boolean", "description": "Ease animation start" },
 				{ "label": "AnimationEaseOut", "type": "boolean", "description": "Ease animation end" }
+			],
+			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
+		},{
+			"label": "Refresh browser source",
+			"addon": "OBS remote",
+			"description": "Refreshes the specified browser source.",
+			"channel": "app.ttvst.obs.request.refreshbrowser",
+			"parameters": [
+				{ "label": "SourceName", "type": "string", "description": "Source name" }
 			],
 			"result": { "label": "ExecuteSuccess", "type": "boolean", "description": "Was the action executed successfully" }
 		}

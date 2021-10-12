@@ -269,5 +269,26 @@
 	},
 	"List of source item names": {
 		"de": "Liste der Quellennamen"
+	},
+	"Get source settings": {
+		"de": "Quelleneinstellungen abfragen"
+	},
+	"Gets the settings of the specified source item.": {
+		"de": "Fragt die Einstellungen der angegebenen Quelle ab"
+	},
+	"Source settings": {
+		"de": "Quelleneinstellungen"
+	},
+	"Set source settings": {
+		"de": "Quelleneinstellungen festlegen"
+	},
+	"Sets the settings of a source": {
+		"de": "Legt die Einstellungen einer Quelle fest"
+	},
+	"Refresh browser source": {
+		"de": "Browserquelle aktualisieren"
+	},
+	"Refreshes the specified browser source.": {
+		"de": "Aktualisiert die angegebene Browserquelle"
 	}
 }

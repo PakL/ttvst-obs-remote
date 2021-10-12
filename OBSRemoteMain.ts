@@ -26,6 +26,10 @@ const OBSActions = {
 	'app.ttvst.obs.request.getcurrentscene': {r:'GetCurrentScene',p:[],x:''},
 	'app.ttvst.obs.request.getsceneitemproperties': {r:'GetSceneItemProperties',p:['scene-name','item.name'],x:''},
 	'app.ttvst.obs.request.setsourceproperties': {r:'SetSceneItemProperties',p:['_'],x:''},
+
+	'app.ttvst.obs.request.getsourcesettings': {r:'GetSourceSettings',p:['sourceName'],x:'sourceSettings'},
+	'app.ttvst.obs.request.setsourcesettings': {r:'SetSourceSettings',p:['sourceName', 'sourceSettings'],x:''},
+
 	'app.ttvst.obs.request.setsourceposition': {r:'SetSceneItemProperties',p:['scene-name', 'item.name', 'position.x', 'position.y', 'position.alignment', '_animation.duration', '_animation.easein', '_animation.easeout'],x:''},
 	'app.ttvst.obs.request.setsourcerotation': {r:'SetSceneItemProperties',p:['scene-name', 'item.name', 'rotation', '_animation.duration', '_animation.easein', '_animation.easeout'],x:''},
 	'app.ttvst.obs.request.setsourcescale': {r:'SetSceneItemProperties',p:['scene-name', 'item.name', 'scale.x', 'scale.y', '_animation.duration', '_animation.easein', '_animation.easeout'],x:''},
@@ -37,7 +41,8 @@ const OBSActions = {
 	'app.ttvst.obs.request.getsourcefiltervisibility': {r:'GetSourceFilterInfo',p:['sourceName', 'filterName'],x:'enabled'},
 	'app.ttvst.obs.request.getsourcefiltersettings': {r:'GetSourceFilterInfo',p:['sourceName', 'filterName'],x:'settings'},
 	'app.ttvst.obs.request.setsourcefiltervisibility': {r:'SetSourceFilterVisibility',p:['sourceName', 'filterName', 'filterEnabled'],x:''},
-	'app.ttvst.obs.request.setsourcefiltersettings': {r:'SetSourceFilterSettings',p:['sourceName', 'filterName', 'filterSettings', '_animation.duration', '_animation.easein', '_animation.easeout'],x:''}
+	'app.ttvst.obs.request.setsourcefiltersettings': {r:'SetSourceFilterSettings',p:['sourceName', 'filterName', 'filterSettings', '_animation.duration', '_animation.easein', '_animation.easeout'],x:''},
+	'app.ttvst.obs.request.refreshbrowser': {r:'RefreshBrowserSource',p:['sourceName'],x:''}
 } as const;
 
 class OBSRemoteMain {
