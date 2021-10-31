@@ -1,5 +1,6 @@
 import OBSWebSocket from 'obs-websocket-js';
 import { ipcMain } from 'electron';
+import { networkInterfaces } from 'os';
 
 import TTVSTMain from '../../dist/dev.pakl.ttvst/main/TTVSTMain';
 import winston from 'winston';
@@ -61,6 +62,7 @@ class OBSRemoteMain {
 
 		this.prepareTriggers();
 		this.prepareActions();
+		this.keepingAlive();
 
 		const self = this;
 		// Added this event to the type definition by myself for now
@@ -129,6 +131,13 @@ class OBSRemoteMain {
 		}
 	}
 
+	async keepingAlive() {
+		try {
+			await this.connection.send('GetCurrentProfile');
+		} catch(e) {}
+		setTimeout((() => { this.keepingAlive(); }).bind(this), 2000);
+	}
+
 	private setupTrigger<K extends keyof typeof OBSTriggers>(eventName: typeof OBSTriggers[K]['e'], channel: K, args: typeof OBSTriggers[K]['a']) {
 		this.connection.on(eventName, (data: { [key: string]: any }|void) => {
 			let prep: Array<string|number|boolean> = [];
@@ -144,6 +153,9 @@ class OBSRemoteMain {
 
 
 		const self = this;
+		this.connection.on('ConnectionClosed', () => {
+			self.connect();
+		});
 		this.connection.on('Exiting', () => {
 			self.connection.disconnect();
 			self.connect();
