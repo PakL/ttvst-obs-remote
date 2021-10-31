@@ -111,6 +111,37 @@ class OBSRemoteMain {
 			await this.connection.connect(options);
 			TTVST.startpage.broadcastStatus({ key: 'app.ttvst.obs', status: 'good', info: 'Connected to OBS', buttons: connectedButtons });
 			this.currentlyConnecting = false;
+
+			if(TTVST.addons.addonInstalled('app.ttvst.overlay')) {
+				/** Refresh browser overlays from overlay host */
+
+				let ipaddresses = ['localhost'];
+				let ipinterfaces = networkInterfaces();
+				let overlayport = parseInt(await TTVST.Settings.getString('overlayhost.global.port', '8090'));
+
+				for(let intf in ipinterfaces) {
+					for(let i = 0; i < ipinterfaces[intf].length; i++) {
+						ipaddresses.push(ipinterfaces[intf][i].family == 'IPv6' ? '['+ipinterfaces[intf][i].address+']' : ipinterfaces[intf][i].address);
+					}
+				}
+
+				try {
+					let resp = await this.connection.send('GetSourcesList');
+					for(let i = 0; i < resp.sources.length; i++) {
+						if(resp.sources[i].typeId === 'browser_source') {
+							let browserSettings = await this.connection.send('GetSourceSettings', { sourceName: resp.sources[i].name });
+							let url = (browserSettings.sourceSettings as {url:string}).url;
+							for(let j = 0; j < ipaddresses.length; j++) {
+								if(url.match(new RegExp('^https?:\\/\\/' + ipaddresses[j] + ':' + overlayport, 'i'))) {
+									await this.connection.send('RefreshBrowserSource', { sourceName: resp.sources[i].name });
+									break;
+								}
+							}
+						}
+					}
+					console.log(ipinterfaces);
+				} catch(e) {}
+			}
 		} catch(reason) {
 			if(reason.error.match(/Authentication Failed/i)) {
 				TTVST.startpage.broadcastStatus({ key: 'app.ttvst.obs', status: 'error', info: 'Authentication failed', buttons: disconnectedButtons });
