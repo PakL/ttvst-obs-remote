@@ -1,8 +1,8 @@
 {
 	"addonid": "app.ttvst.obsremote",
 	"name": "obsremote",
-	"version": "1.1.0",
-	"description": "Control OBS Studio with TTVST via the websocket plugin.",
+	"version": "1.2.0",
+	"description": "Control OBS Studio with TTVST via the websocket plugin. !!!Works only with OBS Studio 28 and above!!!",
 	"author": {
 		"email": "git@pakl.dev",
 		"url": "https://pakl.dev",
@@ -12,6 +12,9 @@
 	"main": "main.js",
 	"renderer": "renderer.js",
 	"dependencies": {
-		"obs-websocket-js": "4.0.3"
+		"obs-websocket-js": "5.0.2"
+	},
+	"devDependencies": {
+		"@types/debug": "^4.1.7"
 	}
 }

@@ -82,14 +82,14 @@
 				{ "label": "SceneName", "type": "string", "description": "Name of the scene the source item belongs to. Defaults to the current scene." },
 				{ "label": "SourceName", "type": "string", "description": "Source name" }
 			],
-			"result": { "label": "SourceProperties", "type": "assoc", "description": "Source properties. Get a list here: https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md#getsceneitemproperties (dots are replaced with underscores)" }
+			"result": { "label": "SourceProperties", "type": "assoc", "description": "Source properties. Get a list here: https://github.com/Palakis/obs-websocket/blob/4.x-compat/docs/generated/protocol.md#getsceneitemproperties (dots are replaced with underscores)" }
 		},{
 			"label": "Set source properties",
 			"addon": "OBS remote",
 			"description": "Sets the scene specific properties of a source. Unspecified properties will remain unchanged. Coordinates are relative to the item's parent (the scene or group it belongs to).",
 			"channel": "app.ttvst.obs.request.setsourceproperties",
 			"parameters": [
-				{ "label": "SourceProperties", "type": "assoc", "description": "Source properties. Get a list here: https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md#setsceneitemproperties (dots are replaced with underscores)" },
+				{ "label": "SourceProperties", "type": "assoc", "description": "Source properties. Get a list here: https://github.com/Palakis/obs-websocket/blob/4.x-compat/docs/generated/protocol.md#setsceneitemproperties (dots are replaced with underscores)" },
 				{ "label": "AnimationDuration", "type": "number", "description": "Animate changes for duration in milliseconds (1/1000s). Leave blank or 0 for no animation." },
 				{ "label": "AnimationEaseIn", "type": "boolean", "description": "Ease animation start" },
 				{ "label": "AnimationEaseOut", "type": "boolean", "description": "Ease animation end" }

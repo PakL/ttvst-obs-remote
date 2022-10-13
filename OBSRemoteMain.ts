@@ -1,9 +1,11 @@
 import OBSWebSocket from 'obs-websocket-js';
 import { ipcMain } from 'electron';
 import { networkInterfaces } from 'os';
+import { OBSEventTypes } from 'obs-websocket-js';
 
 import TTVSTMain from '../../dist/dev.pakl.ttvst/main/TTVSTMain';
-import winston from 'winston';
+import winston, { stream } from 'winston';
+import OBSRemoteAnimations from './OBSRemoteAnimations';
 
 declare var TTVST: TTVSTMain;
 const { BroadcastMain } = TTVST;
@@ -23,8 +25,8 @@ const OBSTriggers = {
 } as const;
 
 const OBSActions = {
-	'app.ttvst.obs.request.setcurrentscene': {r:'SetCurrentScene',p:['scene-name'],x:''},
-	'app.ttvst.obs.request.getcurrentscene': {r:'GetCurrentScene',p:[],x:''},
+	'app.ttvst.obs.request.setcurrentscene': {r:'SetCurrentProgramScene',p:['sceneName'],x:''},
+	'app.ttvst.obs.request.getcurrentscene': {r:'GetCurrentProgramScene',p:[],x:''},
 	'app.ttvst.obs.request.getsceneitemproperties': {r:'GetSceneItemProperties',p:['scene-name','item.name'],x:''},
 	'app.ttvst.obs.request.setsourceproperties': {r:'SetSceneItemProperties',p:['_'],x:''},
 
@@ -46,11 +48,62 @@ const OBSActions = {
 	'app.ttvst.obs.request.refreshbrowser': {r:'RefreshBrowserSource',p:['sourceName'],x:''}
 } as const;
 
+interface ISourcePropertiesIn {
+	[key: string]: any,
+
+	"scene-name"?: string,
+	item?: string,
+	item_id?: number,
+	item_name?: string,
+	position_x?: number,
+	position_y?: number,
+	position_alignment?: number,
+	rotation?: number,
+	scale_x?: number,
+	scale_y?: number,
+	scale_filter?: number,
+	crop_top?: number,
+	crop_bottom?: number,
+	crop_left?: number,
+	crop_right?: number,
+	visible?: boolean,
+	locked?: boolean,
+	bounds_alignment?: number,
+	bounds_x?: number,
+	bounds_y?: number
+
+	positionX?: number,
+	positionY?: number,
+	alignment?: number,
+	scaleX?: number,
+	scaleY?: number,
+	cropTop?: number,
+	cropBottom?: number,
+	cropLeft?: number,
+	cropRight?: number,
+	boundsType?: string,
+	boundsAlignment?: number,
+	boundsWidth?: number,
+	boundsHeight?: number
+}
+
+interface IFilterSettingsIn {
+	[key: string]: any,
+
+	brightness?: number,
+	contrast?: number,
+	gamma?: number,
+	hue_shift?: number,
+	opacity?: number,
+	saturation?: number
+}
+
 class OBSRemoteMain {
 
 	connection: OBSWebSocket;
 	manualDisconnect: boolean = false;
 	currentlyConnecting: boolean = false;
+	animations: OBSRemoteAnimations;
 
 	constructor() {
 		ipcMain.on('app.ttvst.obs.connect', this.onConnect.bind(this));
@@ -59,6 +112,7 @@ class OBSRemoteMain {
 
 		TTVST.startpage.broadcastStatus({ key: 'app.ttvst.obs', icon: 'SmartGlassRemote', status: 'error', title: 'OBS Remote', info: 'Preparing...', buttons: [] });
 		this.connection = new OBSWebSocket();
+		this.animations = new OBSRemoteAnimations(this.connection);
 
 		this.prepareTriggers();
 		this.prepareActions();
@@ -66,7 +120,7 @@ class OBSRemoteMain {
 
 		const self = this;
 		// Added this event to the type definition by myself for now
-		this.connection.on('error', (err) => {
+		this.connection.on('ConnectionError', (err) => {
 			logger.error(err);
 			self.connection.disconnect();
 			TTVST.startpage.broadcastStatus({ key: 'app.ttvst.obs', status: 'error', info: 'Connection closed', buttons: disconnectedButtons });
@@ -100,7 +154,7 @@ class OBSRemoteMain {
 		if(isNaN(port)) port = 4444;
 		let pwd: string = await TTVST.Settings.getString('app.ttvst.obs.password', '');
 
-		let options: { address: string, password?: string } = { address: host + ':' + port };
+		let options: { address: string, password?: string } = { address: 'ws://' + host + ':' + port };
 		if(pwd.length > 0) {
 			Object.assign(options, { password: pwd });
 		}
@@ -108,7 +162,7 @@ class OBSRemoteMain {
 		
 		TTVST.startpage.broadcastStatus({ key: 'app.ttvst.obs', status: 'warn', info: 'Trying to connect...', buttons: connectedButtons });
 		try {
-			await this.connection.connect(options);
+			await this.connection.connect(options.address, options.password);
 			TTVST.startpage.broadcastStatus({ key: 'app.ttvst.obs', status: 'good', info: 'Connected to OBS', buttons: connectedButtons });
 			this.currentlyConnecting = false;
 
@@ -126,16 +180,14 @@ class OBSRemoteMain {
 				}
 
 				try {
-					let resp = await this.connection.send('GetSourcesList');
-					for(let i = 0; i < resp.sources.length; i++) {
-						if(resp.sources[i].typeId === 'browser_source') {
-							let browserSettings = await this.connection.send('GetSourceSettings', { sourceName: resp.sources[i].name });
-							let url = (browserSettings.sourceSettings as {url:string}).url;
-							for(let j = 0; j < ipaddresses.length; j++) {
-								if(url.match(new RegExp('^https?:\\/\\/' + ipaddresses[j] + ':' + overlayport, 'i'))) {
-									await this.connection.send('RefreshBrowserSource', { sourceName: resp.sources[i].name });
-									break;
-								}
+					let resp = await this.connection.call('GetInputList', { inputKind: 'browser_source' });
+					for(let i = 0; i < resp.inputs.length; i++) {
+						let browserSettings = await this.connection.call('GetInputSettings', { inputName: resp.inputs[i].inputName as string });
+						let url = (browserSettings.inputSettings as {url:string}).url;
+						for(let j = 0; j < ipaddresses.length; j++) {
+							if(url.match(new RegExp('^https?:\\/\\/' + ipaddresses[j] + ':' + overlayport, 'i'))) {
+								await this.connection.call('PressInputPropertiesButton', { inputName: resp.inputs[i].inputName as string, propertyName: 'refreshnocache' });
+								break;
 							}
 						}
 					}
@@ -143,7 +195,7 @@ class OBSRemoteMain {
 				} catch(e) {}
 			}
 		} catch(reason) {
-			if(reason.error.match(/Authentication Failed/i)) {
+			if(typeof(reason.message) !== 'undefined' && reason.message.match(/Authentication Failed/i)) {
 				TTVST.startpage.broadcastStatus({ key: 'app.ttvst.obs', status: 'error', info: 'Authentication failed', buttons: disconnectedButtons });
 				this.currentlyConnecting = false;
 			} else {
@@ -164,352 +216,438 @@ class OBSRemoteMain {
 
 	async keepingAlive() {
 		try {
-			await this.connection.send('GetCurrentProfile');
+			let stats = await this.connection.call('GetStats');
+			let streamStatus = await this.connection.call('GetStreamStatus');
+			let recordStatus = await this.connection.call('GetRecordStatus');
+			let bufferStatus = await this.connection.call('GetReplayBufferStatus');
+
+			BroadcastMain.instance.emit('app.ttvst.obs.event.streamstatus',
+				streamStatus.outputActive, recordStatus.outputActive, bufferStatus.outputActive, -1, (100 / streamStatus.outputTotalFrames * streamStatus.outputSkippedFrames),
+				(streamStatus.outputDuration / 1000), streamStatus.outputTotalFrames, streamStatus.outputSkippedFrames, stats.activeFps, stats.renderTotalFrames,
+				stats.renderSkippedFrames, stats.renderTotalFrames, stats.outputSkippedFrames, stats.averageFrameRenderTime,
+				stats.cpuUsage, stats.memoryUsage, stats.availableDiskSpace
+			);
 		} catch(e) {}
 		setTimeout((() => { this.keepingAlive(); }).bind(this), 2000);
 	}
 
-	private setupTrigger<K extends keyof typeof OBSTriggers>(eventName: typeof OBSTriggers[K]['e'], channel: K, args: typeof OBSTriggers[K]['a']) {
-		this.connection.on(eventName, (data: { [key: string]: any }|void) => {
-			let prep: Array<string|number|boolean> = [];
-			if(typeof(data) === 'object') {
-				for(let a of args) {
-					if(typeof(data[a]) !== 'undefined') {
-						prep.push(data[a]);
-					}
-				}
-			}
-			BroadcastMain.instance.emit(channel, ...prep);
+	private prepareTriggers() {
+		const self = this;
+
+		this.connection.on('CurrentProgramSceneChanged', (data) => {
+			BroadcastMain.instance.emit('app.ttvst.obs.event.switchscenes', data.sceneName);
+		});
+		this.connection.on('StreamStateChanged', (data) => {
+			BroadcastMain.instance.emit('app.ttvst.obs.event.' + (data.outputActive ? 'streamstarted' : 'streamstopped'));
 		});
 
-
-		const self = this;
 		this.connection.on('ConnectionClosed', () => {
 			self.connect();
 		});
-		this.connection.on('Exiting', () => {
+		this.connection.on('ExitStarted', () => {
 			self.connection.disconnect();
 			self.connect();
 		});
 	}
 
-	private prepareTriggers() {
-		for(let key of Object.keys(OBSTriggers) as Array<keyof typeof OBSTriggers>) {
-			this.setupTrigger(OBSTriggers[key].e, key, OBSTriggers[key].a);
-		}
+	private async defaultToCurrentScene(sceneName: string): Promise<string> {
+		if(typeof(sceneName) !== 'string') sceneName = '';
+		if(sceneName.length <= 0) sceneName = (await this.connection.call('GetCurrentProgramScene')).currentProgramSceneName;
+		return sceneName;
 	}
 
+	private async sourceNametoId(sceneName: string, sourceName: string): Promise<number> {
+		let sceneItems = await this.connection.call('GetSceneItemList', { sceneName });
 
-	private cleanupForResponseObject(response: {[key: string]: string|number|boolean}, key: string, tocleanup: any) {
-		if(['string', 'number', 'boolean'].indexOf(typeof(tocleanup)) >= 0) {
-			response[key] = tocleanup;
-		} else if(typeof(tocleanup) === 'object') {
-			if(!Array.isArray(tocleanup)) {
-				for(let k of Object.keys(tocleanup)) {
-					this.cleanupForResponseObject(response, (key.length > 0 ? key + '_' : '') + k, tocleanup[k]);
-				}
+		for(let i = 0; i < sceneItems.sceneItems.length; i++) {
+			if(sceneItems.sceneItems[i].sourceName == sourceName) {
+				return sceneItems.sceneItems[i].sceneItemId as number;
 			}
 		}
+		return -1;
 	}
 
-	private cleanupParamNumbers(param: any) {
-		if(typeof(param) === 'object') {
-			if(Array.isArray(param)) {
-				let i = 0;
-				for(let p of param) {
-					param[i] = this.cleanupParamNumbers(p);
-					i++;
-				}
-			} else {
-				for(let k of Object.keys(param)) {
-					param[k] = this.cleanupParamNumbers(param[k]);
-				}
-			}
-		} else if(typeof(param) === 'string') {
-			if(param.match(/^-?[0-9,]+(\.[0-9]+)?/)) {
-				param = parseFloat(param);
-			}
-		}
-		return param;
-	}
+	private async setSourceTransform(executeId: string, sourceProperties: ISourcePropertiesIn, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) {
+		let success = false;
 
-	private setupActions<K extends keyof typeof OBSActions>(requestName: typeof OBSActions[K]['r'], channel: K, param: typeof OBSActions[K]['p']) {
-		const self = this;
-		BroadcastMain.instance.on(channel, (executeId: string, ...params) => {
-			let prep: { [key: string]: any } = {};
-			let i = 0;
-
-			let animationDuration = 0;
-			let animationEaseIn = false;
-			let animationEaseOut = false;
-
-			params = self.cleanupParamNumbers(params);
-			
-			let parameters: string[] = [];
-			parameters = param.slice(0);
-			if(param.length == 1 && param[0] === '_') {
-				parameters = Object.keys(params[0]);
-				let paramsTrue = [];
-				for(let p of parameters) {
-					paramsTrue.push(params[0][p]);
-				}
-
-				parameters.push('_animation.duration');parameters.push('_animation.easein');parameters.push('_animation.easeout');
-				paramsTrue.push(params[1]);paramsTrue.push(params[2]);paramsTrue.push(params[3]);
-
-				params = paramsTrue;
-			}
-			for(let p of parameters) {
-				if(params.length > i) {
-					if(p.startsWith('_')) {
-						if(p === '_animation.duration') {
-							animationDuration = params[i];
-						} else if(p === '_animation.easein') {
-							animationEaseIn = params[i];
-						} else if(p === '_animation.easeout') {
-							animationEaseOut = params[i];
-						}
-					} else {
-						if(p.indexOf('.') > 0) {
-							let [obj, key] = p.split('.', 2);
-							if(typeof(prep[obj]) !== 'object') {
-								prep[obj] = {};
-							}
-							prep[obj][key] = params[i];
-						} else {
-							prep[p] = params[i];
-						}
-					}
-					i++;
-				} else {
-					break;
-				}
-			}
-
-			if(animationDuration <= 0) {
-				self.connection.send(requestName, prep as any).then((values: any) => {
-					let action = BroadcastMain.getAction({ channel });
-					let returnBoolean = false;
-					if(action.length > 0) {
-						if(typeof(action[0].result) !== 'undefined' && action[0].result.type == 'boolean') {
-							returnBoolean = true;
-						}
-					}
-					if(!returnBoolean && typeof(values) !== 'undefined') {
-						let response: {[key: string]: string|number|boolean} = {};
-						if(OBSActions[channel].x.length > 0) {
-							values = values[OBSActions[channel].x];
-						}
-						if(typeof(values) === 'object') {
-							self.cleanupForResponseObject(response, '', values);
-							BroadcastMain.instance.executeRespond(executeId, response);
-						} else {
-							BroadcastMain.instance.executeRespond(executeId, values);
-						}
-					} else {
-						BroadcastMain.instance.executeRespond(executeId, true);
-					}
-				}).catch((reason) => {
-					logger.error(reason);
-					BroadcastMain.instance.executeRespond(executeId, false);
-				});
-			} else {
-				BroadcastMain.instance.executeRespond(executeId, true);
-				if(channel === 'app.ttvst.obs.request.setsourcefiltersettings') {
-					self.animateFilter(prep, animationDuration, animationEaseIn, animationEaseOut);
-				} else {
-					self.animateSource(prep, animationDuration, animationEaseIn, animationEaseOut);
-				}
-			}
-		});
-	}
-
-	private setupSpecialActions() {
-		const self = this;
-		BroadcastMain.instance.on('app.ttvst.obs.request.getcurrentsources', (executeId: string, sceneName: string) => {
-			self.connection.send('GetSceneItemList', { sceneName }).then((values) => {
-				let sources: string[] = [];
-				if(typeof(values.sceneItems) !== 'undefined') {
-					for(let i = 0; i < values.sceneItems.length; i++) {
-						sources.push(values.sceneItems[i].sourceName);
-					}
-				}
-				BroadcastMain.instance.executeRespond(executeId, sources);
-			}).catch((reason) => {
-				logger.error(reason);
-				BroadcastMain.instance.executeRespond(executeId, []);
-			});
-		})
-	}
-
-	private static easeLinear(time: number, startval: number, change: number, duration: number) {
-		return change * time / duration + startval;
-	}
-	private static easeInQuad(time: number, startval: number, change: number, duration: number) {
-		time /= duration;
-		return change * time * time + startval;
-	}
-	private static easeOutQuad(time: number, startval: number, change: number, duration: number) {
-		time /= duration;
-		return -change * time * (time - 2) + startval;
-	}
-	private static easeInOutQuad(time: number, startval: number, change: number, duration: number) {
-		time /= duration / 2;
-		if(time < 1) return change / 2 * time * time + startval;
-		time--;
-		return -change/2 * (time * (time - 2) - 1) + startval;
-	}
-
-	private async animateSource(params: { [key: string]: any }, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) {
 		try {
-			let startValues = await this.connection.send('GetSceneItemProperties', { 'scene-name': params['scene-name'], 'item': { name: params.item.name } });
-			let currentValues: { [key: string]: any } = JSON.parse(JSON.stringify(params));
-			let start = new Date().getTime();
-			let end = start + animationDuration;
-			let minFrameTime = 16; // ~60 fps
-
-			let easeFunc : 'easeLinear'|'easeInQuad'|'easeOutQuad'|'easeInOutQuad' = 'easeLinear';
-			if(animationEaseIn && !animationEaseOut) {
-				easeFunc = 'easeInQuad';
-			} else if(!animationEaseIn && animationEaseOut) {
-				easeFunc = 'easeOutQuad';
-			} else if(animationEaseIn && animationEaseOut) {
-				easeFunc = 'easeInOutQuad';
+			let sceneName = await this.defaultToCurrentScene(sourceProperties['scene-name']);
+			let sceneItemId = -1;
+			if(typeof(sourceProperties.item_id) === 'number') {
+				sceneItemId = sourceProperties.item_id;
+			} else if(typeof(sourceProperties.item) === 'string') {
+				sceneItemId = await this.sourceNametoId(sceneName, sourceProperties.item);
+			} else if(typeof(sourceProperties.item_name) === 'string') {
+				sceneItemId = await this.sourceNametoId(sceneName, sourceProperties.item);
+			} else {
+				BroadcastMain.instance.executeRespond(executeId, false);
+				return;
 			}
 
-			logger.debug('[OBS] Starting animation now');
-
-			while(new Date().getTime() < end) {
-				let frameStart = new Date().getTime();
-				if(typeof(params.position) !== 'undefined') {
-					if(typeof(params.position.x) !== 'undefined') {
-						currentValues.position.x = OBSRemoteMain[easeFunc](frameStart-start, startValues.position.x, params.position.x - startValues.position.x, animationDuration);
-					}
-					if(typeof(params.position.y) !== 'undefined') {
-						currentValues.position.y = OBSRemoteMain[easeFunc](frameStart-start, startValues.position.y, params.position.y - startValues.position.y, animationDuration);
-					}
-				}
-				if(typeof(params.scale) !== 'undefined') {
-					if(typeof(params.scale.x) !== 'undefined') {
-						currentValues.scale.x = OBSRemoteMain[easeFunc](frameStart-start, startValues.scale.x, params.scale.x - startValues.scale.x, animationDuration);
-					}
-					if(typeof(params.scale.y) !== 'undefined') {
-						currentValues.scale.y = OBSRemoteMain[easeFunc](frameStart-start, startValues.scale.y, params.scale.y - startValues.scale.y, animationDuration);
-					}
-				}
-				if(typeof(params.crop) !== 'undefined') {
-					if(typeof(params.crop.top) !== 'undefined') {
-						currentValues.crop.top = OBSRemoteMain[easeFunc](frameStart-start, startValues.crop.top, params.crop.top - startValues.crop.top, animationDuration);
-					}
-					if(typeof(params.crop.left) !== 'undefined') {
-						currentValues.crop.left = OBSRemoteMain[easeFunc](frameStart-start, startValues.crop.left, params.crop.left - startValues.crop.left, animationDuration);
-					}
-					if(typeof(params.crop.right) !== 'undefined') {
-						currentValues.crop.right = OBSRemoteMain[easeFunc](frameStart-start, startValues.crop.right, params.crop.right - startValues.crop.right, animationDuration);
-					}
-					if(typeof(params.crop.bottom) !== 'undefined') {
-						currentValues.crop.bottom = OBSRemoteMain[easeFunc](frameStart-start, startValues.crop.bottom, params.crop.bottom - startValues.crop.bottom, animationDuration);
-					}
-				}
-				if(typeof(params.rotation) !== 'undefined') {
-					currentValues.rotation = OBSRemoteMain[easeFunc](frameStart-start, startValues.rotation, params.rotation - startValues.rotation, animationDuration);
-				}
-
-				try {
-					await this.connection.send('SetSceneItemProperties', currentValues as any);
-				} catch(er) {
-					break;
-				}
-				let frameEnd = new Date().getTime();
-
-				let wait = frameEnd - frameStart;
-				while(wait > minFrameTime) wait -= minFrameTime;
-				wait = minFrameTime - wait;
-
-				await new Promise((r) => { setTimeout(r, wait) });
+			if(sceneItemId < 0) {
+				BroadcastMain.instance.executeRespond(executeId, false);
+				return;
 			}
 
-			logger.debug('[OBS] Animation finished');
-			try {
-				await this.connection.send('SetSceneItemProperties', params as any);
-			} catch(er) {
-				logger.error(er);
+			delete sourceProperties['scene-name'];
+			delete sourceProperties.item;
+			delete sourceProperties.item_id;
+			delete sourceProperties.item_name;
+
+			let translate = {
+				position_x: 'positionX',
+				position_y: 'positionY',
+				position_alignment: 'alignment',
+				scale_x: 'scaleX',
+				scale_y: 'scaleY',
+				crop_top: 'cropTop',
+				crop_bottom: 'cropBottom',
+				crop_left: 'cropLeft',
+				crop_right: 'cropRight',
+				bounds_type: 'boundsType',
+				bounds_alignment: 'boundsAlignment',
+				bounds_x: 'boundsWidth',
+				bounds_y: 'boundsHeight'
+			};
+
+			for(let key in sourceProperties) {
+				if(typeof(translate[key as keyof typeof translate]) === 'string') {
+					sourceProperties[translate[key as keyof typeof translate]] = sourceProperties[key];
+					delete sourceProperties[key];
+				}
+			}
+			for(let key in sourceProperties) {
+				sourceProperties[key] = parseFloat(sourceProperties[key]);
+			}
+
+			if(typeof(sourceProperties.visible) === 'boolean') {
+				await this.connection.call('SetSceneItemEnabled', { sceneName, sceneItemId, sceneItemEnabled: sourceProperties.visible });
+				delete sourceProperties.visible;
+			}
+			if(typeof(sourceProperties.locked) === 'boolean') {
+				await this.connection.call('SetSceneItemLocked', { sceneName, sceneItemId, sceneItemLocked: sourceProperties.locked});
+				delete sourceProperties.locked;
+			}
+
+			if(animationDuration > 0) {
+				let now: ISourcePropertiesIn = {};
+				let final : { boundsHeight?: number, boundsWidth?: number, cropBottom?: number, cropLeft?: number, cropRight?: number, cropTop?: number, positionX?: number, positionY?: number, scaleX?: number, scaleY?: number, rotation?: number } = {};
+				for(let key in sourceProperties) {
+					if(['boundsHeight', 'boundsWidth', 'cropBottom', 'cropLeft', 'cropRight', 'cropTop', 'positionX', 'positionY', 'scaleX', 'scaleY', 'rotation'].indexOf(key) >= 0) {
+						final[key as keyof typeof final] = sourceProperties[key];
+					} else {
+						now[key] = sourceProperties[key];
+					}
+				}
+				
+				if(Object.keys(now).length > 0) {
+					try {
+						await this.connection.call('SetSceneItemTransform', { sceneName, sceneItemId, sceneItemTransform: now });
+					} catch(e) {};
+				}
+
+				if(Object.keys(final).length > 0) {
+					let t = await this.connection.call('GetSceneItemTransform', { sceneName, sceneItemId });
+					this.animations.addAnimation({
+						call: 'SetSceneItemTransform',
+						duration: animationDuration,
+						easeIn: animationEaseIn,
+						easeOut: animationEaseOut,
+						sceneName,
+						sceneItemId,
+						starttime: new Date().getTime(),
+						startingValues: t.sceneItemTransform as { boundsHeight: number, boundsWidth: number, cropBottom: number, cropLeft: number, cropRight: number, cropTop: number, positionX: number, positionY: number, scaleX: number, scaleY: number, rotation: number },
+						finalValues: final
+					});
+				}
+
+				success = true;
+			} else {
+				if(Object.keys(sourceProperties).length > 0) {
+					try {
+						await this.connection.call('SetSceneItemTransform', { sceneName, sceneItemId, sceneItemTransform: sourceProperties });
+					} catch(e) {};
+				}
+				success = true;
 			}
 		} catch(e) {
 			logger.error(e);
 		}
-	}
 
-	private async animateFilter(params: { [key: string]: any }, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) {
-		try {
-			let startValues = (await this.connection.send('GetSourceFilterInfo', { 'sourceName': params['sourceName'], 'filterName': params['filterName'] })) as any;
-			let currentValues: { [key: string]: any } = JSON.parse(JSON.stringify(params));
-			let start = new Date().getTime();
-			let end = start + animationDuration;
-			let minFrameTime = 16; // ~60 fps
-
-			let easeFunc : 'easeLinear'|'easeInQuad'|'easeOutQuad'|'easeInOutQuad' = 'easeLinear';
-			if(animationEaseIn && !animationEaseOut) {
-				easeFunc = 'easeInQuad';
-			} else if(!animationEaseIn && animationEaseOut) {
-				easeFunc = 'easeOutQuad';
-			} else if(animationEaseIn && animationEaseOut) {
-				easeFunc = 'easeInOutQuad';
-			}
-
-			logger.debug('[OBS] Starting animation now');
-
-			while(new Date().getTime() < end) {
-				let frameStart = new Date().getTime();
-				if(typeof(params.filterSettings.brightness) !== 'undefined') {
-					currentValues.filterSettings.brightness = OBSRemoteMain[easeFunc](frameStart-start, startValues.settings.brightness, params.filterSettings.brightness - startValues.settings.brightness, animationDuration);
-				}
-				if(typeof(params.filterSettings.contrast) !== 'undefined') {
-					currentValues.filterSettings.contrast = OBSRemoteMain[easeFunc](frameStart-start, startValues.settings.contrast, params.filterSettings.contrast - startValues.settings.contrast, animationDuration);
-				}
-				if(typeof(params.filterSettings.gamma) !== 'undefined') {
-					currentValues.filterSettings.gamma = OBSRemoteMain[easeFunc](frameStart-start, startValues.settings.gamma, params.filterSettings.gamma - startValues.settings.gamma, animationDuration);
-				}
-				if(typeof(params.filterSettings.hue_shift) !== 'undefined') {
-					currentValues.filterSettings.hue_shift = OBSRemoteMain[easeFunc](frameStart-start, startValues.settings.hue_shift, params.filterSettings.hue_shift - startValues.settings.hue_shift, animationDuration);
-				}
-				if(typeof(params.filterSettings.opacity) !== 'undefined') {
-					currentValues.filterSettings.opacity = OBSRemoteMain[easeFunc](frameStart-start, startValues.settings.opacity, params.filterSettings.opacity - startValues.settings.opacity, animationDuration);
-				}
-				if(typeof(params.filterSettings.saturation) !== 'undefined') {
-					currentValues.filterSettings.saturation = OBSRemoteMain[easeFunc](frameStart-start, startValues.settings.saturation, params.filterSettings.saturation - startValues.settings.saturation, animationDuration);
-				}
-
-				try {
-					await this.connection.send('SetSourceFilterSettings', currentValues as any);
-				} catch(er) {
-					break;
-				}
-				let frameEnd = new Date().getTime();
-
-				let wait = frameEnd - frameStart;
-				while(wait > minFrameTime) wait -= minFrameTime;
-				wait = minFrameTime - wait;
-
-				await new Promise((r) => { setTimeout(r, wait) });
-			}
-
-			logger.debug('[OBS] Animation finished');
-			try {
-				await this.connection.send('SetSourceFilterSettings', params as any);
-			} catch(er) {
-				logger.error(er);
-			}
-		} catch(e) {
-			logger.error(e);
-		}
+		BroadcastMain.instance.executeRespond(executeId, success);
 	}
 
 	private prepareActions() {
-		for(let key of Object.keys(OBSActions) as Array<keyof typeof OBSActions>) {
+		/*for(let key of Object.keys(OBSActions) as Array<keyof typeof OBSActions>) {
 			this.setupActions(OBSActions[key].r, key, OBSActions[key].p);
 		}
-		this.setupSpecialActions();
+		this.setupSpecialActions();*/
+		const self = this;
+		BroadcastMain.instance.on('app.ttvst.obs.request.setcurrentscene', async (executeId: string, sceneName: string) => {
+			let success = false;
+			try {
+			 	await self.connection.call('SetCurrentProgramScene', { sceneName });
+				success = true;
+			} catch(e) {}
+			BroadcastMain.instance.executeRespond(executeId, success);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.getcurrentscene', async (executeId: string) => {
+			let currentScene = { currentProgramSceneName: '' };
+			try {
+				currentScene = await self.connection.call('GetCurrentProgramScene');
+			} catch(e) {
+				logger.error(e);
+			}
+			BroadcastMain.instance.executeRespond(executeId, currentScene.currentProgramSceneName);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.getcurrentsources', async (executeId: string, sceneName: string) => {
+			let items = [];
+			try {
+				sceneName = await self.defaultToCurrentScene(sceneName);
+				let sceneItems = await self.connection.call('GetSceneItemList', { sceneName });
+				for(let i = 0; i < sceneItems.sceneItems.length; i++) {
+					items.push(sceneItems.sceneItems[i].sourceName);
+				}
+			} catch(e) {
+				logger.error(e);
+			}
+			BroadcastMain.instance.executeRespond(executeId, items);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.getsceneitemproperties', async (executeId: string, sceneName: string, sourceName: string) => {
+			let result = {};
+			try {
+				if(sourceName.length <= 0) { BroadcastMain.instance.executeRespond(executeId, {}); return; }
+				sceneName = await self.defaultToCurrentScene(sceneName);
+				let sceneItemId = await self.sourceNametoId(sceneName, sourceName);
+
+				let transform = await self.connection.call('GetSceneItemTransform', { sceneName, sceneItemId });
+				let enabled = await self.connection.call('GetSceneItemEnabled', { sceneName, sceneItemId });
+				let locked = await self.connection.call('GetSceneItemLocked', { sceneName, sceneItemId });
+				let muted = false;
+				try {
+					let m = await self.connection.call('GetInputMute', { inputName: sourceName });
+					muted = m.inputMuted;
+				} catch(e) {}
+
+				result = {
+					name: sourceName,
+					itemId: sceneItemId,
+					position_x: transform.sceneItemTransform.positionX,
+					position_y: transform.sceneItemTransform.positionY,
+					position_alignment: transform.sceneItemTransform.alignment,
+					rotation: transform.sceneItemTransform.rotation,
+					scale_x: transform.sceneItemTransform.scaleX,
+					scale_y: transform.sceneItemTransform.scaleY,
+					scale_filter: 'OBS_SCALE_DISABLE',
+					crop_top: transform.sceneItemTransform.cropTop,
+					crop_right: transform.sceneItemTransform.cropRight,
+					crop_bottom: transform.sceneItemTransform.cropBottom,
+					crop_left: transform.sceneItemTransform.cropLeft,
+					visible: enabled.sceneItemEnabled,
+					muted: muted,
+					locked: locked.sceneItemLocked,
+					bounds_type: transform.sceneItemTransform.boundsType,
+					bounds_alignment: transform.sceneItemTransform.boundsAlignment,
+					bounds_x: transform.sceneItemTransform.boundsWidth,
+					bounds_y: transform.sceneItemTransform.boundsHeight,
+					sourceWidth: transform.sceneItemTransform.sourceWidth,
+					sourceHeight: transform.sceneItemTransform.sourceHeight,
+					width: transform.sceneItemTransform.width,
+					height: transform.sceneItemTransform.height
+				};
+			} catch(e) {
+				logger.error(e);
+			}
+			BroadcastMain.instance.executeRespond(executeId, result);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourceproperties', this.setSourceTransform);
+		BroadcastMain.instance.on('app.ttvst.obs.request.getsourcesettings', async (executeId: string, sourceName: string) => {
+			let result = {};
+			try {
+				let settings = await self.connection.call('GetInputSettings', { inputName: sourceName });
+				result = settings.inputSettings;
+			} catch(e) {
+				logger.error(e);
+			}
+			BroadcastMain.instance.executeRespond(executeId, result);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourcesettings', async (executeId: string, sourceName: string, sourceSettings: { [key: string]: any }) => {
+			let success = false;
+			try {
+				await self.connection.call('SetInputSettings', { inputName: sourceName, inputSettings: sourceSettings, overlay: true });
+				success = true;
+			} catch(e) {
+				logger.error(e);
+			}
+			BroadcastMain.instance.executeRespond(executeId, success);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourceposition', async (executeId: string, sceneName: string, sourceName: string, positionX: number, positionY: number, positionAlignment: number, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) => {
+			self.setSourceTransform(executeId, {
+				'scene-name': sceneName,
+				item: sourceName,
+				positionX,
+				positionY,
+				position_alignment: positionAlignment
+			}, animationDuration, animationEaseIn, animationEaseOut);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourcerotation', async (executeId: string, sceneName: string, sourceName: string, rotation: number, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) => {
+			self.setSourceTransform(executeId, {
+				'scene-name': sceneName,
+				item: sourceName,
+				rotation,
+			}, animationDuration, animationEaseIn, animationEaseOut);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourcescale', async (executeId: string, sceneName: string, sourceName: string, scaleX: number, scaleY: number, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) => {
+			self.setSourceTransform(executeId, {
+				'scene-name': sceneName,
+				item: sourceName,
+				scaleX,
+				scaleY
+			}, animationDuration, animationEaseIn, animationEaseOut);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourcecrop', async (executeId: string, sceneName: string, sourceName: string, cropTop: number, cropRight: number, cropBottom: number, cropLeft: number, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) => {
+			self.setSourceTransform(executeId, {
+				'scene-name': sceneName,
+				item: sourceName,
+				cropTop,
+				cropRight,
+				cropBottom,
+				cropLeft
+			}, animationDuration, animationEaseIn, animationEaseOut);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourcevisible', async (executeId: string, sceneName: string, sourceName: string, visible: boolean, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) => {
+			self.setSourceTransform(executeId, {
+				'scene-name': sceneName,
+				item: sourceName,
+				visible,
+			}, animationDuration, animationEaseIn, animationEaseOut);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourcelocked', async (executeId: string, sceneName: string, sourceName: string, locked: boolean, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) => {
+			self.setSourceTransform(executeId, {
+				'scene-name': sceneName,
+				item: sourceName,
+				locked,
+			}, animationDuration, animationEaseIn, animationEaseOut);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourcebounds', async (executeId: string, sceneName: string, sourceName: string, boundsType: string, boundsAlignment: number, boundsWidth: number, boundsHeight: number, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) => {
+			self.setSourceTransform(executeId, {
+				'scene-name': sceneName,
+				item: sourceName,
+				boundsType,
+				boundsAlignment,
+				boundsWidth,
+				boundsHeight
+			}, animationDuration, animationEaseIn, animationEaseOut);
+		});
+
+		BroadcastMain.instance.on('app.ttvst.obs.request.getsourcefiltervisibility', async (executeId: string, sourceName: string, filterName: string) => {
+			let result = false;
+			try {
+				let filter = await self.connection.call('GetSourceFilter', { sourceName, filterName });
+				result = filter.filterEnabled;
+			} catch(e) {
+				logger.error(e);
+			}
+			BroadcastMain.instance.executeRespond(executeId, result);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.getsourcefiltersettings', async (executeId: string, sourceName: string, filterName: string) => {
+			let result = {};
+			try {
+				let filter = await self.connection.call('GetSourceFilter', { sourceName, filterName });
+				result = filter.filterSettings;
+			} catch(e) {
+				logger.error(e);
+			}
+			BroadcastMain.instance.executeRespond(executeId, result);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourcefiltervisibility', async (executeId: string, sourceName: string, filterName: string, filterEnabled: boolean) => {
+			let success = false;
+			try {
+				await self.connection.call('SetSourceFilterEnabled', { sourceName, filterName, filterEnabled });
+				success = true;
+			} catch(e) {
+				logger.error(e);
+			}
+			BroadcastMain.instance.executeRespond(executeId, success);
+		});
+		BroadcastMain.instance.on('app.ttvst.obs.request.setsourcefiltersettings', async (executeId: string, sourceName: string, filterName: string, filterSettings: IFilterSettingsIn, animationDuration: number, animationEaseIn: boolean, animationEaseOut: boolean) => {
+			let success = false;
+
+			try {
+				for(let key in filterSettings) {
+					if(filterSettings[key].toString().match(/^-?[0-9]+(\.[0-9]+)?$/))
+						filterSettings[key] = parseFloat(filterSettings[key].toString());
+				}
+
+				if(animationDuration > 0) {
+
+					let now: IFilterSettingsIn = {};
+					let final : { brightness?: number, contrast?: number, gamma?: number, hue_shift?: number, opacity?: number, saturation?: number } = {};
+					for(let key in filterSettings) {
+						if(['brightness', 'contrast', 'gamma', 'hue_shift', 'opacity', 'saturation'].indexOf(key) >= 0) {
+							final[key as keyof typeof final] = filterSettings[key];
+						} else {
+							now[key] = filterSettings[key];
+						}
+					}
+					
+					if(Object.keys(now).length > 0) {
+						try {
+							await this.connection.call('SetSourceFilterSettings', { sourceName, filterName, filterSettings: now });
+						} catch(e) {};
+					}
+
+					
+					if(Object.keys(final).length > 0) {
+						let t = await this.connection.call('GetSourceFilter', { sourceName, filterName });
+						let startVals = {
+							brightness: (t.filterSettings.brightness ?? 0) as number,
+							contrast: (t.filterSettings.contrast ?? 0) as number,
+							gamma: (t.filterSettings.gamma ?? 0) as number,
+							hue_shift: (t.filterSettings.hue_shift ?? 0) as number,
+							opacity: (t.filterSettings.opacity ?? 1) as number,
+							saturation: (t.filterSettings.saturation ?? 0) as number
+						}
+						this.animations.addAnimation({
+							call: 'SetSourceFilterSettings',
+							duration: animationDuration,
+							easeIn: animationEaseIn,
+							easeOut: animationEaseOut,
+							sourceName,
+							filterName,
+							starttime: new Date().getTime(),
+							startingValues: startVals,
+							finalValues: final
+						});
+					}
+
+					success = true;
+				} else {
+					if(Object.keys(filterSettings).length > 0) {
+						try {
+							await this.connection.call('SetSourceFilterSettings', { sourceName, filterName, filterSettings });
+						} catch(e) {};
+					}
+					success = true;
+				}
+			} catch(e) {
+				logger.error(e);
+			}
+
+			BroadcastMain.instance.executeRespond(executeId, success);
+		});
+
+		BroadcastMain.instance.on('app.ttvst.obs.request.refreshbrowser', async (executeId: string, inputName: string) => {
+			let success = false;
+			try {
+				await self.connection.call('PressInputPropertiesButton', { inputName, propertyName: 'refreshnocache' });
+				success = true;
+			} catch(e) {
+				logger.error(e);
+			}
+			BroadcastMain.instance.executeRespond(executeId, success);
+		})
+
 	}
 
 }
