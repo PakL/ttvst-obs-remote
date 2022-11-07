@@ -119,9 +119,8 @@ class OBSRemoteMain {
 		this.keepingAlive();
 
 		const self = this;
-		// Added this event to the type definition by myself for now
 		this.connection.on('ConnectionError', (err) => {
-			logger.error(err);
+			if(!err.message.match(/ECONNREFUSED/)) logger.error(err);
 			self.connection.disconnect();
 			TTVST.startpage.broadcastStatus({ key: 'app.ttvst.obs', status: 'error', info: 'Connection closed', buttons: disconnectedButtons });
 			if(!self.manualDisconnect) self.connect();
@@ -191,7 +190,6 @@ class OBSRemoteMain {
 							}
 						}
 					}
-					console.log(ipinterfaces);
 				} catch(e) {}
 			}
 		} catch(reason) {
