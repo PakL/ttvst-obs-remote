@@ -315,7 +315,14 @@ class OBSRemoteMain {
 				}
 			}
 			for(let key in sourceProperties) {
-				sourceProperties[key] = parseFloat(sourceProperties[key]);
+				if(typeof(sourceProperties[key]) !== 'string') continue;
+				if(sourceProperties[key].match(/^-?[0-9]+(\.[0-9])?$/)) {
+					sourceProperties[key] = parseFloat(sourceProperties[key]);
+				} else if(sourceProperties[key] === 'true') {
+					sourceProperties[key] = true;
+				} else if(sourceProperties[key] === 'false') {
+					sourceProperties[key] = false;
+				}
 			}
 
 			if(typeof(sourceProperties.visible) === 'boolean') {
